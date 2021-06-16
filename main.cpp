@@ -1,3 +1,4 @@
+#include <GL/gl.h>
 #include <GLFW/glfw3.h>
 #include <math.h>
 
@@ -7,9 +8,11 @@
 #define WINDOW_WIDTH 1366
 #define WINDOW_HEIGHT 768
 
+#define GL_255U 1.0f / 255
+
 void drawFilledCircle(GLfloat x, GLfloat y, GLfloat radius) {
   int i;
-  int triangleAmount = 20;
+  int triangleAmount = 255;
 
   glBegin(GL_TRIANGLE_FAN);
   glVertex2f(x, y);
@@ -22,13 +25,35 @@ void drawFilledCircle(GLfloat x, GLfloat y, GLfloat radius) {
 
 void drawHollowCircle(GLfloat x, GLfloat y, GLfloat radius) {
   int i;
-  int lineAmount = 100;
+  int lineAmount = 255;
 
   glBegin(GL_LINE_LOOP);
   for (i = 0; i <= lineAmount; i++) {
     glVertex2f(x + (radius * cos(i * PI2 / lineAmount)),
                y + (radius * sin(i * PI2 / lineAmount)));
   }
+  glEnd();
+}
+
+void moon() {
+  glEnable(GL_BLEND);
+  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+  glColor4f(1, 1, 1, 0.05);
+  drawFilledCircle(-1.2, .6, .15);
+  glColor4f(1, 1, 1, 0.1);
+  drawFilledCircle(-1.2, .6, .12);
+  glColor3f(1, 1, 1);
+  drawFilledCircle(-1.2, .6, .1);
+}
+void draw_scene() {
+  moon();
+
+  glBegin(GL_LINE_LOOP);
+  float coords[] = {-0.5, -0.5, 0.5, -0.5, 0.5, 0.5, -0.5, 0.5};
+  glVertex2fv(coords);
+  glVertex2fv(coords + 2);
+  glVertex2fv(coords + 4);
+  glVertex2fv(coords + 6);
   glEnd();
 }
 
@@ -45,8 +70,10 @@ void render(GLFWwindow *window) {
   if (glfwWindowShouldClose(window))
     return;
 
-  glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+  glClearColor(GL_255U * 51, GL_255U * 34, GL_255U * 114, 1.0f);
   glClear(GL_COLOR_BUFFER_BIT);
+
+  draw_scene();
 
   glfwSwapBuffers(window);
 
@@ -56,12 +83,18 @@ void render(GLFWwindow *window) {
 }
 
 int main(void) {
+
   GLFWwindow *window;
 
   if (!glfwInit())
     return -1;
 
   window = glfwCreateWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "CG-ASS", NULL, NULL);
+  glfwSetWindowTitle(window, u8"Mountain View");
+  glfwSetWindowPos(window, 0, 0);
+  glfwSetWindowAspectRatio(window, WINDOW_WIDTH, WINDOW_HEIGHT);
+  glfwSetWindowAttrib(window, GLFW_FLOATING, GLFW_TRUE);
+  glfwSetWindowAttrib(window, GLFW_FOCUS_ON_SHOW, GLFW_FALSE);
 
   if (!window) {
     glfwTerminate();
