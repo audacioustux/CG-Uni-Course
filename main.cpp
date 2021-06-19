@@ -50,7 +50,7 @@ void glDrawMoon() {
 }
 void glDrawStar() {
   glColor4f(GL_255U * 185, GL_255U * 183, GL_255U * 193, 0.1);
-  glDrawFilledCircle(0, 0, .2);
+  glDrawFilledCircle(0, 0, .3);
   glColor3f(185, GL_255U * 183, GL_255U * 193);
   glDrawFilledCircle(0, 0, .1);
 }
@@ -198,7 +198,6 @@ int main(void) {
   glfwSetWindowPos(window, WINDOW_WIDTH, 0);
   glfwSetWindowAspectRatio(window, WINDOW_WIDTH, WINDOW_HEIGHT);
   glfwSetWindowAttrib(window, GLFW_FLOATING, GLFW_TRUE);
-  glfwSetWindowAttrib(window, GLFW_FOCUS_ON_SHOW, GLFW_FALSE);
 
   if (!window) {
     glfwTerminate();
