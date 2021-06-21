@@ -40,6 +40,40 @@ void glDrawHollowCircle(GLfloat x, GLfloat y, GLfloat radius) {
   glEnd();
 }
 
+void glDrawLine(GLfloat x1, GLfloat y1, GLfloat x2, GLfloat y2) {
+  glBegin(GL_LINES);
+  glVertex2f(x1, y1);
+  glVertex2f(x2, y2);
+  glEnd();
+}
+
+void glDrawQuadUnit() {
+  glBegin(GL_QUADS);
+  float coords[] = {0, 0, 1, 0, 1, 1, 0, 1};
+  glVertex2fv(coords);
+  glVertex2fv(coords + 2);
+  glVertex2fv(coords + 4);
+  glVertex2fv(coords + 6);
+  glEnd();
+}
+void glDrawQuad(GLfloat width, GLfloat height) {
+  glPushMatrix();
+  glScalef(width, height, 0);
+  glDrawQuadUnit();
+  glPopMatrix();
+};
+void glDrawQuad(GLfloat x, GLfloat y, GLfloat width, GLfloat height) {
+  glPushMatrix();
+  glTranslatef(x, y, 0.f);
+  glScalef(width, height, 0);
+  glDrawQuad(width, height);
+  glPopMatrix();
+}
+void glDrawQuad(GLfloat size) { glDrawQuad(size, size); };
+void glDrawQuad(GLfloat x, GLfloat y, GLfloat size) {
+  glDrawQuad(x, y, size, size);
+};
+
 void glDrawMoon() {
   glColor4f(1, 1, 1, 0.05);
   glDrawFilledCircle(0, 0, .15);
@@ -106,15 +140,8 @@ void glDrawSky() {
 
 void glDrawGrid(GLfloat width, GLfloat height) {
   glColor4f(1, 1, 1, 0.05);
-
-  glBegin(GL_LINES);
-  glVertex2f(0, 0);
-  glVertex2f(width, height);
-  glEnd();
-  glBegin(GL_LINES);
-  glVertex2f(0, height);
-  glVertex2f(width, 0);
-  glEnd();
+  glDrawLine(0, height, width, 0);
+  glDrawLine(0, 0, width, height);
 
   for (float x = 0; x <= width; x += 50) {
     glBegin(GL_LINE_LOOP);
@@ -130,28 +157,44 @@ void glDrawGrid(GLfloat width, GLfloat height) {
   };
 }
 
-void glDrawRiver(GLfloat x, GLfloat y, GLfloat height, GLfloat width) {
-  glPushMatrix();
-  glTranslatef(x, y, 0.f);
-  glScalef(width, height, 1.0f);
-
+void glDrawRiver(GLfloat x, GLfloat y, GLfloat width, GLfloat height) {
   glColor3f(0, GL_255U * 94, GL_255U * 137);
-  glBegin(GL_QUADS);
-  float coords[] = {0, 0, 1, 0, 1, 1, 0, 1};
-  glVertex2fv(coords);
-  glVertex2fv(coords + 2);
-  glVertex2fv(coords + 4);
-  glVertex2fv(coords + 6);
-  glEnd();
-
-  glPopMatrix();
+  glDrawQuad(x, y, width, height);
 };
 
+void glDrawWindMillBlades() {
+  for (int i = 0; i < 4; ++i) {
+    glPushMatrix();
+    glRotatef(90 * i, 0, 0, 1);
+    glTranslatef(-.1, .1, 0);
+    glDrawQuad(1.f / 5, 1);
+    glPopMatrix();
+  }
+}
+void glDrawWindMill() {
+  static short blade_angle = 0;
+
+  glPushMatrix();
+  glTranslatef(800, 200, 0.f);
+  glDrawQuad(-12, 0, 5, 15);
+  glDrawFilledCircle(0, 0, 15);
+
+  glPushMatrix();
+  glScalef(100, 100, 0);
+  glRotatef(blade_angle, 0, 0, 1);
+  glDrawWindMillBlades();
+  glPopMatrix();
+
+  glPopMatrix();
+
+  blade_angle = (blade_angle % 360) + 1;
+}
 void glDrawScene(GLFWwindow *window) {
   glDrawGrid(WINDOW_WIDTH, WINDOW_HEIGHT);
 
   glDrawSky();
-  glDrawRiver(0, WINDOW_HEIGHT - 50, 50, WINDOW_WIDTH);
+  glDrawWindMill();
+  glDrawRiver(0, WINDOW_HEIGHT - 50, WINDOW_WIDTH, 50);
 }
 
 void render(GLFWwindow *window) {
