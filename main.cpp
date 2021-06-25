@@ -164,7 +164,6 @@ void glDrawSky() {
   glTranslatef(225, 225, 0.f);
   glScalef(300, 300, 1.0f);
 
-  // blur out stars near moon
   glColor4f(GL_255U * 51, GL_255U * 34, GL_255U * 114, .4f);
   glDrawFilledCircle(0, 0, .4);
 
@@ -230,8 +229,28 @@ void glDrawWindMill() {
 void glDrawMountains() {
   vector<tuple<tuple<unsigned int, GLfloat>, vector<array<GLfloat, 2>>>>
       mountains = {
+          {{0x0BB79A, 1}, {{0, 505}, {0, 526}, {100, 494}, {56, 450}}},
+          {{0x0b947f, 1},
+           {
+               {50, 500},
+               {40, 485},
+               {0, 526},
+               {100, 494},
+               {56, 450},
+           }},
           {{0x0BB79A, 1},
-           {{54, 446.5}, {0, 504.8}, {0, 504.8 + 81.5}, {192, 504.8 + 81.5}}}};
+           {{0, 572}, {440, 572}, {222, 370}, {125, 484}, {0, 526}}},
+          {{0x0b947f, 1},
+           {
+               {440, 572},
+               {222, 370},
+               {256, 500},
+               {214, 474},
+               {200, 508},
+               {168, 492},
+               {118, 572},
+           }},
+      };
 
   for (auto mountain : mountains) {
     auto [_color, cords] = mountain;
