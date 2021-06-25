@@ -1,8 +1,11 @@
 #include <GL/gl.h>
 #include <GLFW/glfw3.h>
+#include <array>
 #include <iostream>
 #include <math.h>
 #include <random>
+#include <tuple>
+#include <vector>
 
 using namespace std;
 
@@ -14,6 +17,32 @@ using namespace std;
 #define STAR_COUNT 100
 
 #define GL_255U 1.0f / 255
+
+union Color {
+  unsigned int hex;
+#if IS_BIG_ENDIAN
+  struct {
+    unsigned char r, g, b;
+  };
+#else
+  struct {
+    unsigned char b, g, r;
+  };
+#endif
+};
+struct GLColorRGB {
+  GLfloat r, g, b;
+};
+
+GLColorRGB Hex2glRGB(unsigned int hex) {
+  union Color _hex;
+  _hex.hex = hex;
+  GLColorRGB rgb;
+  rgb.r = _hex.r / 255.f;
+  rgb.g = _hex.g / 255.f;
+  rgb.b = _hex.b / 255.f;
+  return rgb;
+}
 
 void glDrawFilledCircle(GLfloat x, GLfloat y, GLfloat radius) {
   int i;
@@ -73,7 +102,13 @@ void glDrawQuad(GLfloat size) { glDrawQuad(size, size); };
 void glDrawQuad(GLfloat x, GLfloat y, GLfloat size) {
   glDrawQuad(x, y, size, size);
 };
-
+void glDrawPolygon(vector<array<GLfloat, 2>> poly_cords) {
+  glBegin(GL_POLYGON);
+  for (auto cord : poly_cords) {
+    glVertex2fv((GLfloat *)&cord);
+  }
+  glEnd();
+}
 void glDrawMoon() {
   glColor4f(1, 1, 1, 0.05);
   glDrawFilledCircle(0, 0, .15);
@@ -174,25 +209,43 @@ void glDrawWindMillBlades() {
 void glDrawWindMill() {
   static short blade_angle = 0;
 
+  glColor3f(1, 1, 1);
   glPushMatrix();
   glTranslatef(800, 200, 0.f);
   glDrawQuad(-12, 0, 5, 15);
-  glDrawFilledCircle(0, 0, 15);
 
+  glColor3f(.9, .9, .9);
   glPushMatrix();
   glScalef(100, 100, 0);
   glRotatef(blade_angle, 0, 0, 1);
   glDrawWindMillBlades();
   glPopMatrix();
 
+  glColor3f(1, 1, 1);
+  glDrawFilledCircle(0, 0, 20);
   glPopMatrix();
 
   blade_angle = (blade_angle % 360) + 1;
+}
+void glDrawMountains() {
+  vector<tuple<tuple<unsigned int, GLfloat>, vector<array<GLfloat, 2>>>>
+      mountains = {
+          {{0x0BB79A, 1},
+           {{54, 446.5}, {0, 504.8}, {0, 504.8 + 81.5}, {192, 504.8 + 81.5}}}};
+
+  for (auto mountain : mountains) {
+    auto [_color, cords] = mountain;
+    auto [color, alpha] = _color;
+    auto [r, g, b] = Hex2glRGB(color);
+    glColor4f(r, g, b, alpha);
+    glDrawPolygon(get<1>(mountain));
+  }
 }
 void glDrawScene(GLFWwindow *window) {
   glDrawGrid(WINDOW_WIDTH, WINDOW_HEIGHT);
 
   glDrawSky();
+  glDrawMountains();
   glDrawWindMill();
   glDrawRiver(0, WINDOW_HEIGHT - 50, WINDOW_WIDTH, 50);
 }
