@@ -38,10 +38,7 @@ GLColorRGB Hex2glRGB(unsigned int hex) {
   union Color _hex;
   _hex.hex = hex;
   GLColorRGB rgb;
-  rgb.r = _hex.r / 255.f;
-  rgb.g = _hex.g / 255.f;
-  rgb.b = _hex.b / 255.f;
-  return rgb;
+  return {_hex.r * GL_255U, _hex.g * GL_255U, _hex.b * GL_255U};
 }
 
 void glDrawFilledCircle(GLfloat x, GLfloat y, GLfloat radius) {
@@ -94,7 +91,6 @@ void glDrawQuad(GLfloat width, GLfloat height) {
 void glDrawQuad(GLfloat x, GLfloat y, GLfloat width, GLfloat height) {
   glPushMatrix();
   glTranslatef(x, y, 0.f);
-  glScalef(width, height, 0);
   glDrawQuad(width, height);
   glPopMatrix();
 }
@@ -102,10 +98,46 @@ void glDrawQuad(GLfloat size) { glDrawQuad(size, size); };
 void glDrawQuad(GLfloat x, GLfloat y, GLfloat size) {
   glDrawQuad(x, y, size, size);
 };
-void glDrawPolygon(vector<array<GLfloat, 2>> poly_cords) {
+struct Point {
+  GLfloat x;
+  GLfloat y;
+};
+void glDrawPolygon(vector<Point> poly_cords) {
   glBegin(GL_POLYGON);
   for (auto cord : poly_cords) {
     glVertex2fv((GLfloat *)&cord);
+  }
+  glEnd();
+}
+void glDrawCubicBezierCurve() {
+  // https://en.wikipedia.org/wiki/B%C3%A9zier_curve
+  Point p0 = {0, 400}, p1 = {400, 0}, p2 = {400, 400}, p3 = {800, 0};
+  glColor3f(1, 0, 0);
+  glBegin(GL_LINES);
+  glVertex2fv((GLfloat *)&p0);
+  glVertex2fv((GLfloat *)&p1);
+  glEnd();
+  glBegin(GL_LINES);
+  glVertex2fv((GLfloat *)&p1);
+  glVertex2fv((GLfloat *)&p2);
+  glEnd();
+  glBegin(GL_LINES);
+  glVertex2fv((GLfloat *)&p2);
+  glVertex2fv((GLfloat *)&p3);
+  glEnd();
+  glColor3f(0, 1, 0);
+  glBegin(GL_LINE_STRIP);
+  for (float t = 0.f; t <= 1.f; t += .01f) {
+    Point l0 = {(1 - t) * p0.x + t * p1.x, (1 - t) * p0.y + t * p1.y};
+    Point l1 = {(1 - t) * p1.x + t * p2.x, (1 - t) * p1.y + t * p2.y};
+    Point l2 = {(1 - t) * p2.x + t * p3.x, (1 - t) * p2.y + t * p3.y};
+
+    Point q0 = {(1 - t) * l0.x + t * l1.x, (1 - t) * l0.y + t * l1.y};
+    Point q1 = {(1 - t) * l1.x + t * l2.x, (1 - t) * l1.y + t * l2.y};
+
+    Point c0 = {(1 - t) * q0.x + t * q1.x, (1 - t) * q0.y + t * q1.y};
+
+    glVertex2fv((GLfloat *)&c0);
   }
   glEnd();
 }
@@ -211,7 +243,7 @@ void glDrawWindMill() {
   glColor3f(1, 1, 1);
   glPushMatrix();
   glTranslatef(800, 200, 0.f);
-  glDrawQuad(-12, 0, 5, 15);
+  glDrawQuad(-10, 0, 20, 250);
 
   glColor3f(.9, .9, .9);
   glPushMatrix();
@@ -227,30 +259,29 @@ void glDrawWindMill() {
   blade_angle = (blade_angle % 360) + 1;
 }
 void glDrawMountains() {
-  vector<tuple<tuple<unsigned int, GLfloat>, vector<array<GLfloat, 2>>>>
-      mountains = {
-          {{0x0BB79A, 1}, {{0, 505}, {0, 526}, {100, 494}, {56, 450}}},
-          {{0x0b947f, 1},
-           {
-               {50, 500},
-               {40, 485},
-               {0, 526},
-               {100, 494},
-               {56, 450},
-           }},
-          {{0x0BB79A, 1},
-           {{0, 572}, {440, 572}, {222, 370}, {125, 484}, {0, 526}}},
-          {{0x0b947f, 1},
-           {
-               {440, 572},
-               {222, 370},
-               {256, 500},
-               {214, 474},
-               {200, 508},
-               {168, 492},
-               {118, 572},
-           }},
-      };
+  // <vector of polygons <tuple of <tuple of rgb, alpha>, <vector of {x,y}>>>
+  vector<tuple<tuple<unsigned int, GLfloat>, vector<Point>>> mountains = {
+      {{0x0BB79A, 1}, {{0, 505}, {0, 526}, {100, 494}, {56, 450}}},
+      {{0x0b947f, 1},
+       {
+           {50, 500},
+           {40, 485},
+           {0, 526},
+           {100, 494},
+           {56, 450},
+       }},
+      {{0x0BB79A, 1}, {{0, 572}, {440, 572}, {222, 370}, {125, 484}, {0, 526}}},
+      {{0x0b947f, 1},
+       {
+           {440, 572},
+           {222, 370},
+           {256, 500},
+           {214, 474},
+           {200, 508},
+           {168, 492},
+           {118, 572},
+       }},
+  };
 
   for (auto mountain : mountains) {
     auto [_color, cords] = mountain;
@@ -267,6 +298,7 @@ void glDrawScene(GLFWwindow *window) {
   glDrawMountains();
   glDrawWindMill();
   glDrawRiver(0, WINDOW_HEIGHT - 50, WINDOW_WIDTH, 50);
+  glDrawCubicBezierCurve();
 }
 
 void render(GLFWwindow *window) {
