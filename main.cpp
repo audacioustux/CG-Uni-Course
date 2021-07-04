@@ -111,24 +111,9 @@ void glDrawPolygon(vector<Point> poly_cords) {
   }
   glEnd();
 }
-void glDrawCubicBezierCurve() {
+void glDrawCubicBezierCurve(Point controls[4]) {
   // https://en.wikipedia.org/wiki/B%C3%A9zier_curve
-  Point p0 = {0, 400}, p1 = {400, 0}, p2 = {400, 400}, p3 = {800, 0};
-  glColor3f(1, 0, 0);
-  glBegin(GL_LINES);
-  glVertex2fv((GLfloat *)&p0);
-  glVertex2fv((GLfloat *)&p1);
-  glEnd();
-  glBegin(GL_LINES);
-  glVertex2fv((GLfloat *)&p1);
-  glVertex2fv((GLfloat *)&p2);
-  glEnd();
-  glBegin(GL_LINES);
-  glVertex2fv((GLfloat *)&p2);
-  glVertex2fv((GLfloat *)&p3);
-  glEnd();
-  glColor3f(0, 1, 0);
-  glBegin(GL_LINE_STRIP);
+  Point p0 = controls[0], p1 = controls[1], p2 = controls[2], p3 = controls[3];
   for (float t = 0.f; t <= 1.f; t += .01f) {
     Point l0 = {(1 - t) * p0.x + t * p1.x, (1 - t) * p0.y + t * p1.y};
     Point l1 = {(1 - t) * p1.x + t * p2.x, (1 - t) * p1.y + t * p2.y};
@@ -141,7 +126,6 @@ void glDrawCubicBezierCurve() {
 
     glVertex2fv((GLfloat *)&c0);
   }
-  glEnd();
 }
 void glDrawMoon() {
   glColor4f(1, 1, 1, 0.05);
@@ -152,9 +136,9 @@ void glDrawMoon() {
   glDrawFilledCircle(0, 0, .1);
 }
 void glDrawStar() {
-  glColor4f(GL_255U * 185, GL_255U * 183, GL_255U * 193, 0.1);
+  glColor4f(1, 1, 1, 0.1);
   glDrawFilledCircle(0, 0, .3);
-  glColor3f(185, GL_255U * 183, GL_255U * 193);
+  glColor3f(.8, .8, .8);
   glDrawFilledCircle(0, 0, .1);
 }
 struct STAR_META {
@@ -230,6 +214,44 @@ void glDrawRiver(GLfloat x, GLfloat y, GLfloat width, GLfloat height) {
   glColor3f(0, GL_255U * 94, GL_255U * 137);
   glDrawQuad(x, y, width, height);
 };
+void glDrawShip() {
+  static short x = WINDOW_WIDTH - 300;
+  auto ship_color = Hex2glRGB(0x3CAFBF);
+  glColor3fv((GLfloat *)&ship_color);
+
+  glPushMatrix();
+  glTranslatef(x, 620, 0);
+  glScalef(20, 15, 0);
+  glBegin(GL_TRIANGLES);
+  glVertex2f(0, 1);
+  glVertex2f(.40, 0);
+  glVertex2f(.40, 1);
+  glEnd();
+  glBegin(GL_QUADS);
+  float pal[] = {.45, 0, .45, 1, .50, 1, .50, .2};
+  glVertex2fv(pal);
+  glVertex2fv(pal + 2);
+  glVertex2fv(pal + 4);
+  glVertex2fv(pal + 6);
+  glEnd();
+  glBegin(GL_TRIANGLES);
+  glVertex2f(.55, .2);
+  glVertex2f(.55, 1);
+  glVertex2f(1, 1);
+  glEnd();
+  glBegin(GL_QUADS);
+  float base[] = {-.2, 1.1, 0, 1.4, 1.1, 1.4, 1.2, 1.1};
+  glVertex2fv(base);
+  glVertex2fv(base + 2);
+  glVertex2fv(base + 4);
+  glVertex2fv(base + 6);
+  glEnd();
+
+  glPopMatrix();
+  x -= 1;
+  if (x < 0)
+    x = WINDOW_WIDTH - 150;
+}
 
 void glDrawWindMillBlades() {
   for (int i = 0; i < 4; ++i) {
@@ -247,8 +269,7 @@ void glDrawWindMill() {
   glPushMatrix();
   glTranslatef(800, 330, 0.f);
   glDrawQuad(-10, 0, 20, 250);
-  glColor3f(.9, .9, .9);
-  glDrawQuad(-35, 240, 70, 20);
+  glDrawQuad(-35, 245, 70, 10);
   glPushMatrix();
   glScalef(100, 100, 0);
   glRotatef(blade_angle, 0, 0, 1);
@@ -261,30 +282,9 @@ void glDrawWindMill() {
 
   blade_angle = (blade_angle % 360) + 1;
 }
-void glDrawMountains() {
+void glDrawMountains(
+    vector<tuple<tuple<unsigned int, GLfloat>, vector<Point>>> mountains) {
   // <vector of polygons <tuple of <tuple of rgb, alpha>, <vector of {x,y}>>>
-  vector<tuple<tuple<unsigned int, GLfloat>, vector<Point>>> mountains = {
-      {{0x0BB79A, 1}, {{0, 505}, {0, 526}, {100, 494}, {56, 450}}},
-      {{0x0b947f, 1},
-       {
-           {50, 500},
-           {40, 485},
-           {0, 526},
-           {100, 494},
-           {56, 450},
-       }},
-      {{0x0BB79A, 1}, {{0, 572}, {440, 572}, {222, 370}, {125, 484}, {0, 526}}},
-      {{0x0b947f, 1},
-       {
-           {440, 572},
-           {222, 370},
-           {256, 500},
-           {214, 474},
-           {200, 508},
-           {168, 492},
-           {118, 572},
-       }},
-  };
 
   for (auto mountain : mountains) {
     auto [_color, cords] = mountain;
@@ -315,14 +315,33 @@ void glDrawBird() {
   }
   glEnd();
   glPopMatrix();
-  x += 1;
+  x += 2;
   if (x > WINDOW_WIDTH + 100)
     x = 0;
 }
 void glDrawLand() {
+
+  Point controls[] = {{0, 572}, {400, 540}, {400, 570}, {WINDOW_WIDTH, 572}};
+  // glColor3f(1, 0, 0);
+  // glBegin(GL_LINES);
+  // glVertex2fv((GLfloat *)&controls[0]);
+  // glVertex2fv((GLfloat *)&controls[1]);
+  // glEnd();
+  // glBegin(GL_LINES);
+  // glVertex2fv((GLfloat *)&controls[1]);
+  // glVertex2fv((GLfloat *)&controls[2]);
+  // glEnd();
+  // glBegin(GL_LINES);
+  // glVertex2fv((GLfloat *)&controls[2]);
+  // glVertex2fv((GLfloat *)&controls[3]);
+  // glEnd();
   auto land_color = Hex2glRGB(0x9DC746);
   glColor3fv((GLfloat *)&land_color);
-  glDrawQuad(0, 572, WINDOW_WIDTH, 28);
+  glBegin(GL_POLYGON);
+  glDrawCubicBezierCurve(controls);
+  glVertex2f(WINDOW_WIDTH, 600);
+  glVertex2f(0, 600);
+  glEnd();
 }
 void glDrawClock() {
   auto now = chrono::system_clock::to_time_t(chrono::system_clock::now());
@@ -354,14 +373,128 @@ void glDrawClock() {
 
   glPopMatrix();
 };
+void glDrawTree1(GLColorRGB color) {
+  glColor3fv((GLfloat *)&color);
+  glBegin(GL_TRIANGLES);
+  glVertex2f(0, 1);
+  glVertex2f(.5, 0);
+  glVertex2f(1, 1);
+  glEnd();
+}
+void glDrawTree2(GLColorRGB color) {
+  // with snow
+  glColor3f(1, 1, 1);
+  glBegin(GL_TRIANGLES);
+  glVertex2f(0, 1);
+  glVertex2f(.45, 0);
+  glVertex2f(.45, 1);
+  glEnd();
+  glColor3fv((GLfloat *)&color);
+  glBegin(GL_TRIANGLES);
+  glVertex2f(.5, 0);
+  glVertex2f(.5, 1);
+  glVertex2f(1, 1);
+  glEnd();
+}
+void glDrawTrees() {
+  // on land
+  glPushMatrix();
+  glTranslatef(200, 565, 0);
+  glScalef(7, 15, 0);
+  glDrawTree1(Hex2glRGB(0x8CAF45));
+  glPopMatrix();
+  glPushMatrix();
+  glTranslatef(210, 570, 0);
+  glScalef(10, 15, 0);
+  glDrawTree1(Hex2glRGB(0xAFD24A));
+  glPopMatrix();
+  // on back mountains
+  glPushMatrix();
+  glTranslatef(150, 450, 0);
+  glScalef(10, 20, 0);
+  glDrawTree2(Hex2glRGB(0x269971));
+  glPopMatrix();
+  glPushMatrix();
+  glTranslatef(120, 470, 0);
+  glScalef(8, 15, 0);
+  glDrawTree2(Hex2glRGB(0x269971));
+  glPopMatrix();
+  glPushMatrix();
+  glTranslatef(140, 475, 0);
+  glScalef(7, 15, 0);
+  glDrawTree1(Hex2glRGB(0x269971));
+  glPopMatrix();
+  // on front mountains
+  glPushMatrix();
+  glTranslatef(1170, 420, 0);
+  glScalef(10, 20, 0);
+  glDrawTree2(Hex2glRGB(0x269971));
+  glPopMatrix();
+  glPushMatrix();
+  glTranslatef(980, 550, 0);
+  glScalef(8, 15, 0);
+  glDrawTree2(Hex2glRGB(0x269971));
+  glPopMatrix();
+  glPushMatrix();
+  glTranslatef(980, 575, 0);
+  glScalef(7, 15, 0);
+  glDrawTree1(Hex2glRGB(0x269971));
+  glPopMatrix();
+  glPushMatrix();
+  glTranslatef(140, 475, 0);
+  glScalef(7, 15, 0);
+  glDrawTree1(Hex2glRGB(0x269971));
+  glPopMatrix();
+}
 void glDrawScene() {
   glDrawGrid(WINDOW_WIDTH, WINDOW_HEIGHT);
 
   glDrawSky();
-  glDrawMountains();
+  glDrawMountains({
+      {{0x0BB79A, 1}, {{0, 505}, {0, 526}, {100, 494}, {56, 450}}},
+      {{0x0b947f, 1},
+       {
+           {50, 500},
+           {40, 485},
+           {0, 526},
+           {100, 494},
+           {56, 450},
+       }},
+      {{0x0BB79A, 1}, {{0, 572}, {440, 572}, {222, 370}, {125, 484}, {0, 526}}},
+      {{0x0b947f, 1},
+       {
+           {440, 572},
+           {222, 370},
+           {256, 500},
+           {214, 474},
+           {200, 508},
+           {168, 492},
+           {118, 572},
+       }},
+  });
   glDrawRiver(0, WINDOW_HEIGHT - 50, WINDOW_WIDTH, 50);
+  glDrawShip();
   glDrawLand();
   glDrawWindMill();
+  glDrawMountains({
+      {{0x0BB79A, 1},
+       {{WINDOW_WIDTH, 340}, {1124, 460}, {WINDOW_WIDTH, WINDOW_HEIGHT}}},
+      {{0x0BB79A, 1},
+       {{906, WINDOW_HEIGHT},
+        {WINDOW_WIDTH, WINDOW_HEIGHT},
+        {WINDOW_WIDTH, 472},
+        {1033, 418}}},
+      {{0x0b947f, 1},
+       {
+           {1083, 555},
+           {1036, 526},
+           {975, WINDOW_HEIGHT},
+           {WINDOW_WIDTH, WINDOW_HEIGHT},
+           {WINDOW_WIDTH, 472},
+           {1033, 418},
+       }},
+  });
+  glDrawTrees();
   glDrawClock();
   glDrawBird();
 }
