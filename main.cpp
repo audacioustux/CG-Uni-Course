@@ -1,6 +1,8 @@
 #include <GL/gl.h>
 #include <GLFW/glfw3.h>
 #include <array>
+#include <chrono>
+#include <ctime>
 #include <iostream>
 #include <math.h>
 #include <random>
@@ -205,6 +207,7 @@ void glDrawSky() {
 }
 
 void glDrawGrid(GLfloat width, GLfloat height) {
+  glLineWidth(1);
   glColor4f(1, 1, 1, 0.05);
   glDrawLine(0, height, width, 0);
   glDrawLine(0, 0, width, height);
@@ -242,10 +245,10 @@ void glDrawWindMill() {
 
   glColor3f(1, 1, 1);
   glPushMatrix();
-  glTranslatef(800, 200, 0.f);
+  glTranslatef(800, 330, 0.f);
   glDrawQuad(-10, 0, 20, 250);
-
   glColor3f(.9, .9, .9);
+  glDrawQuad(-35, 240, 70, 20);
   glPushMatrix();
   glScalef(100, 100, 0);
   glRotatef(blade_angle, 0, 0, 1);
@@ -291,14 +294,76 @@ void glDrawMountains() {
     glDrawPolygon(get<1>(mountain));
   }
 }
-void glDrawScene(GLFWwindow *window) {
+void glDrawBird() {
+  static auto x = 0;
+  Point flap1[] = {{-50, 200}, {-25, 225}, {-0, 200}};
+  Point flap2[] = {{-50, 215}, {-25, 200}, {-0, 215}};
+
+  glColor3f(.8, .8, .5);
+  glLineWidth(10);
+  glPushMatrix();
+  glTranslatef(x, 0, 0);
+  glBegin(GL_LINE_STRIP);
+  if (x % 50 < 10) {
+    glVertex2fv((GLfloat *)&flap1[0]);
+    glVertex2fv((GLfloat *)&flap1[1]);
+    glVertex2fv((GLfloat *)&flap1[2]);
+  } else {
+    glVertex2fv((GLfloat *)&flap2[0]);
+    glVertex2fv((GLfloat *)&flap2[1]);
+    glVertex2fv((GLfloat *)&flap2[2]);
+  }
+  glEnd();
+  glPopMatrix();
+  x += 1;
+  if (x > WINDOW_WIDTH + 100)
+    x = 0;
+}
+void glDrawLand() {
+  auto land_color = Hex2glRGB(0x9DC746);
+  glColor3fv((GLfloat *)&land_color);
+  glDrawQuad(0, 572, WINDOW_WIDTH, 28);
+}
+void glDrawClock() {
+  auto now = chrono::system_clock::to_time_t(chrono::system_clock::now());
+  auto now_tm = localtime(&now);
+
+  Point center = {WINDOW_WIDTH - 200, 100};
+  GLfloat r = 50;
+
+  glColor4f(1, 1, 1, .4);
+  glLineWidth(2);
+
+  glPushMatrix();
+  glTranslatef(center.x, center.y, 0.f);
+  glScalef(50, 50, 0);
+  glPushMatrix();
+  glRotatef(now_tm->tm_sec * (360.f / 60), 0, 0, 1);
+  glDrawLine(0, 0, 0, -1. + .1);
+  glPopMatrix();
+  glPushMatrix();
+  glRotatef(now_tm->tm_min * (360.f / 60), 0, 0, 1);
+  glDrawLine(0, 0, 0, -1. + .3);
+  glPopMatrix();
+  glPushMatrix();
+  glRotatef((now_tm->tm_hour + 1) * (360.f / 12), 0, 0, 1);
+  glDrawLine(0, 0, 0, -1. + .5);
+  glPopMatrix();
+
+  glDrawHollowCircle(0, 0, 1);
+
+  glPopMatrix();
+};
+void glDrawScene() {
   glDrawGrid(WINDOW_WIDTH, WINDOW_HEIGHT);
 
   glDrawSky();
   glDrawMountains();
-  glDrawWindMill();
   glDrawRiver(0, WINDOW_HEIGHT - 50, WINDOW_WIDTH, 50);
-  glDrawCubicBezierCurve();
+  glDrawLand();
+  glDrawWindMill();
+  glDrawClock();
+  glDrawBird();
 }
 
 void render(GLFWwindow *window) {
@@ -308,7 +373,7 @@ void render(GLFWwindow *window) {
   glClearColor(GL_255U * 51, GL_255U * 34, GL_255U * 114, 1.0f);
   glClear(GL_COLOR_BUFFER_BIT);
 
-  glDrawScene(window);
+  glDrawScene();
 
   glfwSwapBuffers(window);
 
