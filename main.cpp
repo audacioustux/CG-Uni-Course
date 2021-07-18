@@ -20,6 +20,9 @@ using namespace std;
 
 #define GL_255U 1.0f / 255
 
+float bird_speed = 2;
+float ship_speed = 1;
+
 union Color {
   unsigned int hex;
 #if IS_BIG_ENDIAN
@@ -248,7 +251,7 @@ void glDrawShip() {
   glEnd();
 
   glPopMatrix();
-  x -= 1;
+  x -= ship_speed;
   if (x < 0)
     x = WINDOW_WIDTH - 150;
 }
@@ -315,7 +318,7 @@ void glDrawBird() {
   }
   glEnd();
   glPopMatrix();
-  x += 2;
+  x += bird_speed;
   if (x > WINDOW_WIDTH + 100)
     x = 0;
 }
@@ -447,7 +450,7 @@ void glDrawTrees() {
   glPopMatrix();
 }
 void glDrawScene() {
-  glDrawGrid(WINDOW_WIDTH, WINDOW_HEIGHT);
+  // glDrawGrid(WINDOW_WIDTH, WINDOW_HEIGHT);
 
   glDrawSky();
   glDrawMountains({
@@ -508,6 +511,7 @@ void render(GLFWwindow *window) {
 
   glDrawScene();
 
+  glfwSwapInterval(1);
   glfwSwapBuffers(window);
 
   glfwPollEvents();
@@ -530,6 +534,24 @@ void set_framebuffer_size(GLFWwindow *window, int width, int height) {
 
   glMatrixMode(GL_MODELVIEW);
 }
+void mouse_button_callback(GLFWwindow *window, int button, int action,
+                           int mods) {
+  if (action == GLFW_PRESS) {
+    if (button == GLFW_MOUSE_BUTTON_RIGHT)
+      bird_speed += .2;
+    else if (button == GLFW_MOUSE_BUTTON_LEFT)
+      bird_speed -= .2;
+  }
+}
+void keyboard_key_callback(GLFWwindow *window, int key, int scancode,
+                           int action, int mods) {
+  if (action == GLFW_PRESS) {
+    if (key == GLFW_KEY_RIGHT)
+      ship_speed += .2;
+    else if (key == GLFW_KEY_LEFT)
+      ship_speed -= .2;
+  }
+}
 
 int main(void) {
 
@@ -550,6 +572,8 @@ int main(void) {
   }
 
   glfwSetFramebufferSizeCallback(window, set_framebuffer_size);
+  glfwSetMouseButtonCallback(window, mouse_button_callback);
+  glfwSetKeyCallback(window, keyboard_key_callback);
 
   glfwMakeContextCurrent(window);
 
